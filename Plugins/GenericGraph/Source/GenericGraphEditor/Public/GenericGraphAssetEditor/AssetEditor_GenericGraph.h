@@ -35,7 +35,6 @@ public:
 	// End of FAssetEditorToolkit
 
 	//Toolbar
-	void UpdateToolbar();
 	TSharedPtr<class FAssetEditorToolbar_GenericGraph> GetToolbarBuilder() { return ToolbarBuilder; }
 	void RegisterToolbarTab(const TSharedRef<class FTabManager>& TabManager);
 
@@ -46,7 +45,7 @@ public:
 
 #if ENGINE_MAJOR_VERSION == 5
 	// FGCObject interface
-	virtual FString GetReferencerName() const
+	virtual FString GetReferencerName() const override
 	{
 		return TEXT("FAssetEditor_LTGenericGraph");
 	}
@@ -116,9 +115,9 @@ protected:
 #endif // #else // #if ENGINE_MAJOR_VERSION < 5
 
 protected:
-	UGenericGraphEditorSettings* GenricGraphEditorSettings;
+	UGenericGraphEditorSettings* GenericGraphEditorSettings;
 
-	UGenericGraph* EditingGraph;
+	TObjectPtr<UGenericGraph> EditingGraph;
 
 	//Toolbar
 	TSharedPtr<class FAssetEditorToolbar_GenericGraph> ToolbarBuilder;
