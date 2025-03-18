@@ -12,7 +12,10 @@
 		{
 			"Name": "SMToolEditor",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"Blutility"
+			]
 		}
 	],
 	"Plugins": [
