@@ -11,7 +11,7 @@
  */
 UCLASS()
 class UQuickAssetActionEx : public UAssetActionUtility
-{
+{ 
 	GENERATED_BODY()
 
 public:
