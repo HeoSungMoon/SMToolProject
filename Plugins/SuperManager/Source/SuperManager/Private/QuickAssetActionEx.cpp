@@ -6,8 +6,34 @@
 #include "EditorUtilityLibrary.h"
 #include "EditorAssetLibrary.h"
 
-void UQuickAssetActionEx::TestFunc()
+void UQuickAssetActionEx::DuplicateAssets(int32 NumOfDuplicates)
 {
-	Print(TEXT("Working"), FColor::Cyan);
-	PrintLog(TEXT("Working"));
+	if (NumOfDuplicates <= 0)
+	{
+		Print(TEXT("Please enter a VALID number"), FColor::Red);
+		return;
+	}
+
+	TArray<FAssetData> SelectedAssetsData = UEditorUtilityLibrary::GetSelectedAssetData();
+	uint32 Counter = 0;
+	for (const FAssetData& SelectedAsset : SelectedAssetsData)
+	{
+		for (int32 i = 0; i < NumOfDuplicates; i++)
+		{
+			const FString SourceAssetPath = SelectedAsset.ObjectPath.ToString();
+			const FString NewDuplicateAssetName = SelectedAsset.AssetName.ToString() + TEXT("_") + FString::FromInt(i + 1);
+			const FString NewPathName = FPaths::Combine(SelectedAsset.PackagePath.ToString(), NewDuplicateAssetName);
+
+			if (UEditorAssetLibrary::DuplicateAsset(SourceAssetPath, NewPathName))
+			{
+				UEditorAssetLibrary::SaveAsset(SourceAssetPath, false);
+				++Counter;
+			}
+		}
+	}
+
+	if (Counter > 0)
+	{
+		Print(TEXT("Successfully Duplicated Assets" + FString::FromInt(Counter) + "files"), FColor::Red);
+	}
 }

@@ -16,5 +16,5 @@ class UQuickAssetActionEx : public UAssetActionUtility
 
 public:
 	UFUNCTION(CallInEditor)
-	void TestFunc();
+	void DuplicateAssets(int32 NumOfDuplicates);
 };
