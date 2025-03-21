@@ -17,4 +17,14 @@ class UQuickAssetActionEx : public UAssetActionUtility
 public:
 	UFUNCTION(CallInEditor)
 	void DuplicateAssets(int32 NumOfDuplicates);
+
+	UFUNCTION(CallInEditor)
+	void AddPrefixes();
+	
+private:
+	TMap<UClass*, FString> PrefixMap =
+	{
+		{ UBlueprint::StaticClass(), TEXT("BP_")}
+	};
 };
+

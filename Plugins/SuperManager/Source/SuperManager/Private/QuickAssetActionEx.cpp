@@ -38,3 +38,37 @@ void UQuickAssetActionEx::DuplicateAssets(int32 NumOfDuplicates)
 		ShowNotifyInfo(TEXT("Successfully Duplicated Assets " + FString::FromInt(Counter) + " files"));
 	}
 }
+
+void UQuickAssetActionEx::AddPrefixes()
+{
+	TArray<UObject*> SelectedObjects = UEditorUtilityLibrary::GetSelectedAssets();
+	uint32 Counter = 0;
+
+	for (UObject* SelectedObject : SelectedObjects)
+	{
+		if (!SelectedObject) continue;
+
+		FString* PrefixFound = PrefixMap.Find(SelectedObject->GetClass());
+		if (!PrefixFound || PrefixFound->IsEmpty())
+		{
+			Print(TEXT("Failed to find prefix for class ") + SelectedObject->GetClass()->GetName(), FColor::Red);
+			continue;
+		}
+
+		FString OldName = SelectedObject->GetName();
+		if (OldName.StartsWith(*PrefixFound))
+		{
+			Print(OldName + TEXT(" already has prefix added"), FColor::Red);
+			continue;
+		}
+
+		const FString NewNameWithPrefix = *PrefixFound + OldName;
+		UEditorUtilityLibrary::RenameAsset(SelectedObject, NewNameWithPrefix);
+		++Counter;
+	}
+
+	if (Counter > 0)
+	{
+		ShowNotifyInfo(TEXT("Successfully renamed " + FString::FromInt(Counter) + " assets"));
+	}
+}
