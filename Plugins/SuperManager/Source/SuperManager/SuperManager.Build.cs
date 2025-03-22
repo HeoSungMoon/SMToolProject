@@ -29,6 +29,8 @@ public class SuperManager : ModuleRules
 				"Core",
 				"Blutility",
 				"EditorScriptingUtilities",
+				"UMG",
+				"UnrealEd",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -40,7 +42,8 @@ public class SuperManager : ModuleRules
 				"CoreUObject",
 				"Engine",
 				"Slate",
-				"SlateCore",
+				"SlateCore", 
+				"Niagara",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

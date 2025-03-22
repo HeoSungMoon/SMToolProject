@@ -23,8 +23,7 @@ EAppReturnType::Type ShowMsgDialog(EAppMsgType::Type MsgType, const FString& Mes
 {
 	if (bShowMsgAsWarning)
 	{
-		FText MsgTile = FText::FromString("Warning");
-		return FMessageDialog::Open(MsgType, FText::FromString(Message), &MsgTile);
+		return FMessageDialog::Open(MsgType, FText::FromString(Message), FText::FromString("Warning"));
 	}
 	else
 	{

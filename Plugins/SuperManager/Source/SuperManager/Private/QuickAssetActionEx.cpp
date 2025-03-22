@@ -5,6 +5,8 @@
 #include "DebugHeader.h"
 #include "EditorUtilityLibrary.h"
 #include "EditorAssetLibrary.h"
+#include "Algo/ForEach.h"
+#include "ObjectTools.h"
 
 void UQuickAssetActionEx::DuplicateAssets(int32 NumOfDuplicates)
 {
@@ -20,10 +22,10 @@ void UQuickAssetActionEx::DuplicateAssets(int32 NumOfDuplicates)
 	{
 		for (int32 i = 0; i < NumOfDuplicates; i++)
 		{
-			const FString SourceAssetPath = SelectedAsset.ObjectPath.ToString();
+			const FString SourceAssetPath = SelectedAsset.GetSoftObjectPath().ToString(); // GetPathName()
 			const FString NewDuplicateAssetName = SelectedAsset.AssetName.ToString() + TEXT("_") + FString::FromInt(i + 1);
 			const FString NewPathName = FPaths::Combine(SelectedAsset.PackagePath.ToString(), NewDuplicateAssetName);
-
+			
 			if (UEditorAssetLibrary::DuplicateAsset(SourceAssetPath, NewPathName))
 			{
 				UEditorAssetLibrary::SaveAsset(SourceAssetPath, false);
@@ -61,6 +63,20 @@ void UQuickAssetActionEx::AddPrefixes()
 			Print(OldName + TEXT(" already has prefix added"), FColor::Red);
 			continue;
 		}
+		
+		Algo::ForEachIf(PrefixMap, [&OldName](const TTuple<UClass*, FString>& Value)
+		{
+			return OldName.StartsWith(Value.Get<1>());
+		},
+		[&OldName](const TTuple<UClass*, FString>& Value)
+		{
+			OldName.RemoveFromStart(Value.Get<1>());
+		});
+
+		if (SelectedObject->IsA(UMaterialInstanceConstant::StaticClass()))
+		{
+			OldName.RemoveFromEnd(TEXT("_Inst"));
+		}
 
 		const FString NewNameWithPrefix = *PrefixFound + OldName;
 		UEditorUtilityLibrary::RenameAsset(SelectedObject, NewNameWithPrefix);
@@ -71,4 +87,30 @@ void UQuickAssetActionEx::AddPrefixes()
 	{
 		ShowNotifyInfo(TEXT("Successfully renamed " + FString::FromInt(Counter) + " assets"));
 	}
+}
+
+void UQuickAssetActionEx::RemoveUnusedAssets()
+{
+	TArray<FAssetData> SelectedAssetsData = UEditorUtilityLibrary::GetSelectedAssetData();
+	TArray<FAssetData> UnusedAssetsData;
+	for (const FAssetData& SelectedAsset : SelectedAssetsData)
+	{
+		TArray<FString> AssetReference = UEditorAssetLibrary::FindPackageReferencersForAsset(SelectedAsset.ToSoftObjectPath().ToString(), true);
+		if (AssetReference.Num() == 0)
+		{
+			UnusedAssetsData.Add(SelectedAsset);
+		}
+	}
+
+	if (UnusedAssetsData.Num() == 0)
+	{
+		ShowMsgDialog(EAppMsgType::Ok, TEXT("No unused asset found among selected assets"), false);
+		return;
+	}
+
+	//UEditorAssetLibrary::DeleteAsset()
+	int32 NumOfAssetsDeleted = ObjectTools::DeleteAssets(UnusedAssetsData);
+	if (NumOfAssetsDeleted == 0) return;
+
+	ShowNotifyInfo(TEXT("Successfully deleted " + FString::FromInt(NumOfAssetsDeleted) + TEXT("unused Assets")));
 }
