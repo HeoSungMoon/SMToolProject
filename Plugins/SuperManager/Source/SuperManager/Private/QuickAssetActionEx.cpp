@@ -132,10 +132,7 @@ void UQuickAssetActionEx::FixUpRedirectors()
 
 	TArray<FAssetData> OutRedirectors;
 	AssetRegistryModule.Get().GetAssets(Filter, OutRedirectors);
-
-	// Algo::TransformIf(OutRedirectors, RedirectorsToFixArray,
-	// 	[](const FAssetData& Data) { return Cast<UObjectRedirector>(Data.GetAsset()); },
-	// 	[](const FAssetData& Data) { return Cast<UObjectRedirector>(Data.GetAsset()); });
+	
 	for (const FAssetData& Redirector : OutRedirectors)
 	{
 		if (UObjectRedirector* RedirectorToFix = Cast<UObjectRedirector>(Redirector.GetAsset()))

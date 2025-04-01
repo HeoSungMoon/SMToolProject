@@ -5,6 +5,8 @@
 #include "DebugHeader.h"
 #include "EditorAssetLibrary.h"
 #include "ObjectTools.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "AssetToolsModule.h"
 
 #define LOCTEXT_NAMESPACE "FSuperManagerModule"
 
@@ -61,6 +63,14 @@ void FSuperManagerModule::AddCBMenuEntry(class FMenuBuilder& MenuBuilder)
 		FSlateIcon(),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteUnusedAssetButtonClicked)
 	);
+
+	MenuBuilder.AddMenuEntry
+	(
+		FText::FromString(TEXT("Delete Empty Folders")),
+		FText::FromString(TEXT("Safely delete all empty folder")),
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked)
+	);
 }
 
 void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
@@ -83,12 +93,17 @@ void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 
 	if (ConfirmResult == EAppReturnType::No) return;
 
+	FixUpRedirectors();
+	
 	TArray<FAssetData> UnusedAssetsData;
 
 	for (const FString& AssetPath : AssetPathNames)
 	{
 		// Don't touch root folder
-		if (AssetPath.Contains(TEXT("Developers")) || AssetPath.Contains(TEXT("Collections")))
+		if (AssetPath.Contains(TEXT("Developers")) ||
+			AssetPath.Contains(TEXT("Collections")) ||
+			AssetPath.Contains(TEXT("__ExternalActors__")) ||
+			AssetPath.Contains(TEXT("__ExternalObjects__")))
 		{
 			continue;
 		}
@@ -112,6 +127,90 @@ void FSuperManagerModule::OnDeleteUnusedAssetButtonClicked()
 	{
 		DebugHeader::ShowMsgDialog(EAppMsgType::Ok, TEXT("No unused asset found under selected folder"));
 	}
+}
+
+void FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked()
+{
+	DebugHeader::Print(TEXT("Working"), FColor::Green);
+
+	TArray<FString> FolderPathsArray = UEditorAssetLibrary::ListAssets(FolderPathsSelected[0], true, true);
+	uint32 Counter = 0;
+
+	FString EmptyFolderPathsNames;
+	TArray<FString> EmptyFolderPathsArray;
+
+	for (const FString& FolderPath : FolderPathsArray)
+	{
+		if (FolderPath.Contains(TEXT("Developers")) ||
+			FolderPath.Contains(TEXT("Collections")) ||
+			FolderPath.Contains(TEXT("__ExternalActors__")) ||
+			FolderPath.Contains(TEXT("__ExternalObjects__")))
+		{
+			continue;
+		}
+
+		if (!UEditorAssetLibrary::DoesDirectoryExist(FolderPath)) continue;
+
+		if (!UEditorAssetLibrary::DoesDirectoryHaveAssets(FolderPath))
+		{
+			EmptyFolderPathsNames.Append((FolderPath));
+			EmptyFolderPathsNames.Append(TEXT("\n"));
+			EmptyFolderPathsArray.Add(FolderPath);
+		}
+	}
+
+	if (EmptyFolderPathsArray.Num() == 0)
+	{
+		DebugHeader::ShowMsgDialog(EAppMsgType::Ok, TEXT("No empty folder found under selected folder"), false);
+		return;
+	}
+
+	EAppReturnType::Type ConfirmResult =
+	DebugHeader::ShowMsgDialog(EAppMsgType::OkCancel, TEXT("Empty folders found in : \n") + EmptyFolderPathsNames + TEXT("\n Would you like to delete all?"), false);
+
+	if (ConfirmResult == EAppReturnType::Cancel) return;
+
+	for (const FString& EmptyFolderPath : EmptyFolderPathsArray)
+	{
+		if (UEditorAssetLibrary::DeleteDirectory(EmptyFolderPath))
+		{
+			++Counter;
+		}
+		else
+		{
+			DebugHeader::Print(EmptyFolderPath, FColor::Red);
+		}
+	}
+
+	if (Counter > 0)
+	{
+		DebugHeader::ShowNotifyInfo(TEXT("Successfully deleted all folders ") + FString::FromInt(Counter));
+	}
+}
+
+void FSuperManagerModule::FixUpRedirectors()
+{
+	TArray<UObjectRedirector*> RedirectorsToFixArray;
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::Get().LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+
+	FARFilter Filter;
+	Filter.bRecursivePaths = true;
+	Filter.PackagePaths.Emplace(TEXT("/Game"));
+	Filter.ClassPaths.Add(UObjectRedirector::StaticClass()->GetClassPathName());
+
+	TArray<FAssetData> OutRedirectors;
+	AssetRegistryModule.Get().GetAssets(Filter, OutRedirectors);
+	
+	for (const FAssetData& Redirector : OutRedirectors)
+	{
+		if (UObjectRedirector* RedirectorToFix = Cast<UObjectRedirector>(Redirector.GetAsset()))
+		{
+			RedirectorsToFixArray.Add(RedirectorToFix);
+		}
+	}
+	
+	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>(TEXT("AssetTools"));
+	AssetToolsModule.Get().FixupReferencers(RedirectorsToFixArray);
 }
 
 #pragma endregion
