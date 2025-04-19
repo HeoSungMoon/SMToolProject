@@ -16,9 +16,7 @@ public:
 	virtual void ShutdownModule() override;
 
 private:
-
-#pragma region ContentBrowserMenuExtension
-
+	
 	void InitCBMenuExtension();
 
 	TArray<FString> FolderPathsSelected;
@@ -28,8 +26,13 @@ private:
 
 	void OnDeleteUnusedAssetButtonClicked();
 	void OnDeleteEmptyFoldersButtonClicked();
+	void OnAdvanceDeletionButtonClicked();
 
 	void FixUpRedirectors();
-#pragma endregion
+
+	void RegisterAdvanceDeletionTab();
+
+	TSharedRef<SDockTab> OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& Args);
+
 };
 

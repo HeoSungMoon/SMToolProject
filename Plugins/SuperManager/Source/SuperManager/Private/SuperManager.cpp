@@ -14,7 +14,7 @@ void FSuperManagerModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
 	InitCBMenuExtension();
-	
+	RegisterAdvanceDeletionTab();
 }
 
 void FSuperManagerModule::ShutdownModule()
@@ -22,8 +22,6 @@ void FSuperManagerModule::ShutdownModule()
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
 }
-
-#pragma region ContentBrowserMenuExtension
 
 void FSuperManagerModule::InitCBMenuExtension()
 {
@@ -70,6 +68,14 @@ void FSuperManagerModule::AddCBMenuEntry(class FMenuBuilder& MenuBuilder)
 		FText::FromString(TEXT("Safely delete all empty folder")),
 		FSlateIcon(),
 		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked)
+	);
+
+	MenuBuilder.AddMenuEntry
+	(
+		FText::FromString(TEXT("Advance Deletion")),
+		FText::FromString(TEXT("List assets by specific condition in a tab for deleting")),
+		FSlateIcon(),
+		FExecuteAction::CreateRaw(this, &FSuperManagerModule::OnAdvanceDeletionButtonClicked)
 	);
 }
 
@@ -188,6 +194,11 @@ void FSuperManagerModule::OnDeleteEmptyFoldersButtonClicked()
 	}
 }
 
+void FSuperManagerModule::OnAdvanceDeletionButtonClicked()
+{
+	FGlobalTabmanager::Get()->TryInvokeTab(FName("AdvanceDeletion"));
+}
+
 void FSuperManagerModule::FixUpRedirectors()
 {
 	TArray<UObjectRedirector*> RedirectorsToFixArray;
@@ -213,7 +224,18 @@ void FSuperManagerModule::FixUpRedirectors()
 	AssetToolsModule.Get().FixupReferencers(RedirectorsToFixArray);
 }
 
-#pragma endregion
+void FSuperManagerModule::RegisterAdvanceDeletionTab()
+{
+	FGlobalTabmanager::Get()->RegisterNomadTabSpawner(FName("AdvanceDeletion"), FOnSpawnTab::CreateRaw(this, &FSuperManagerModule::OnSpawnAdvanceDeletionTab))
+	.SetDisplayName(FText::FromString(TEXT("AdvanceDeletion")));
+
+}
+
+TSharedRef<SDockTab> FSuperManagerModule::OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& Args)
+{
+	return SNew(SDockTab).TabRole(NomadTab);
+}
+	
 
 #undef LOCTEXT_NAMESPACE
 	
