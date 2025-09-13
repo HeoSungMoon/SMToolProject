@@ -30,9 +30,11 @@ private:
 
 	void FixUpRedirectors();
 
+	//~ Custom Editor Tab
 	void RegisterAdvanceDeletionTab();
 
 	TSharedRef<SDockTab> OnSpawnAdvanceDeletionTab(const FSpawnTabArgs& Args);
-
+	TArray<TSharedPtr<FAssetData>> GetAllAssetDataUnderSelectedFolder();
+	//~ Custom Editor Tab
 };
 
